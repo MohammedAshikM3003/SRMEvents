@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Eye, EyeOff, Hexagon } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -15,6 +15,13 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn')
+    if (isLoggedIn === 'true') {
+      router.push('/dashboard')
+    }
+  }, [router])
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
