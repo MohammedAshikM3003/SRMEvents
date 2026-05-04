@@ -90,6 +90,7 @@ export default function LoginPage() {
                     <Input
                       id="password"
                       type={showPassword ? 'text' : 'password'}
+                      placeholder="SRMdgl"
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -103,6 +104,10 @@ export default function LoginPage() {
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
+                </div>
+
+                <div className="text-xs text-slate-400 text-center mt-1">
+                  Use <span className="font-mono bg-slate-100 px-1 rounded">SRMdgl</span> / <span className="font-mono bg-slate-100 px-1 rounded">SRMdgl</span> to bypass
                 </div>
 
                 {error && (

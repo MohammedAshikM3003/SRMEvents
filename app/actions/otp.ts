@@ -31,6 +31,12 @@ export async function sendOtp(contactType: 'email', contactValue: string, userId
 
   if (dbError) {
     console.error('Error saving OTP:', dbError)
+    if (userId === '00000000-0000-0000-0000-000000000000' || userId === '105ea82f-76d3-4c88-b03d-e135e55d88b3') {
+      return { 
+        success: false, 
+        error: 'Database error occurred during bypass. This can happen if the bypass User ID is invalid or missing from the users table. Please try signing in with a real account.' 
+      }
+    }
     return { success: false, error: 'Failed to generate OTP. Please try again.' }
   }
 
@@ -77,15 +83,15 @@ export async function verifyOtp(contactType: 'email', contactValue: string, otp:
     .update({ verified: true })
     .eq('id', data.id)
 
-  // Insert into notification contacts
+  // Insert into notification contacts (using upsert to avoid duplicate key errors)
   const { error: insertError } = await supabase
     .from('notification_contacts')
-    .insert({
+    .upsert({
       user_id: userId,
       contact_type: contactType,
       contact_value: contactValue,
       is_active: true,
-    })
+    }, { onConflict: 'user_id,contact_value' })
 
   if (insertError) {
     console.error('Error inserting contact:', insertError)

@@ -4,8 +4,9 @@ import { SettingsContent } from './settings-content'
 export default async function SettingsPage() {
   const supabase = await createClient()
   
-  // Using a hardcoded user ID for bypass
-  const userId = '00000000-0000-0000-0000-000000000000'
+  // Get current user if available, fallback to placeholder for bypass
+  const { data: { user } } = await supabase.auth.getUser()
+  const userId = user?.id || '105ea82f-76d3-4c88-b03d-e135e55d88b3'
 
   // Fetch notification contacts and settings in parallel
   const [contactsResponse, settingsResponse] = await Promise.all([
