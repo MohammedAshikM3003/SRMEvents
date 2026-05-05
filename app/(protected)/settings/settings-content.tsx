@@ -25,6 +25,7 @@ interface SettingsContentProps {
 
 export function SettingsContent({ contacts, settings, userId }: SettingsContentProps) {
   const [reminderDays, setReminderDays] = useState(settings?.reminder_days_before ?? 7)
+  const [reminderTime, setReminderTime] = useState(settings?.reminder_time ?? '09:00')
   const [newContactValue, setNewContactValue] = useState('')
   const [isAddingContact, setIsAddingContact] = useState(false)
   const [isSavingSettings, setIsSavingSettings] = useState(false)
@@ -132,12 +133,16 @@ export function SettingsContent({ contacts, settings, userId }: SettingsContentP
       if (settings) {
         await supabase
           .from('settings')
-          .update({ reminder_days_before: reminderDays })
+          .update({ 
+            reminder_days_before: reminderDays,
+            reminder_time: reminderTime
+          })
           .eq('id', settings.id)
       } else {
         await supabase.from('settings').insert({
           user_id: userId,
           reminder_days_before: reminderDays,
+          reminder_time: reminderTime
         })
       }
       router.refresh()
@@ -159,6 +164,14 @@ export function SettingsContent({ contacts, settings, userId }: SettingsContentP
     hidden: { opacity: 0, y: 10 },
     show: { opacity: 1, y: 0, transition: { type: "spring", bounce: 0.3, duration: 0.4 } }
   }
+
+  const hours = Array.from({ length: 24 }, (_, i) => {
+    const hour = i.toString().padStart(2, '0')
+    return {
+      label: `${hour}:00`,
+      value: `${hour}:00`
+    }
+  })
 
   return (
     <motion.div 
@@ -277,6 +290,24 @@ export function SettingsContent({ contacts, settings, userId }: SettingsContentP
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="grid gap-3">
+              <Label htmlFor="reminder_time" className="text-black/80">Preferred Notification Time (Daily)</Label>
+              <Select
+                value={reminderTime}
+                onValueChange={setReminderTime}
+              >
+                <SelectTrigger className="bg-black/5 border-black/10 text-black h-12 rounded-xl focus:ring-primary/50">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-black/10 text-black">
+                  {hours.map((h) => (
+                    <SelectItem key={h.value} value={h.value}>{h.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <Button onClick={handleSaveSettings} disabled={isSavingSettings} className="w-full sm:w-auto h-12 rounded-xl bg-black/5 hover:bg-black/10 text-black border border-black/10">
               {isSavingSettings ? 'Saving Preferences...' : 'Save Preferences'}
             </Button>

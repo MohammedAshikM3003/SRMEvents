@@ -124,6 +124,10 @@ export function MemberForm({ initialData, userId, onSuccess }: MemberFormProps) 
       }
 
       router.refresh()
+      
+      // Trigger reminder check immediately in the background
+      fetch('/api/cron/reminders').catch(err => console.error('Failed to trigger immediate reminder:', err))
+
       if (onSuccess) {
         onSuccess()
       } else {
@@ -183,14 +187,40 @@ export function MemberForm({ initialData, userId, onSuccess }: MemberFormProps) 
           </div>
           <div className="grid gap-2">
             <Label htmlFor="phone" className="text-black/70">Phone *</Label>
-            <Input
-              id="phone"
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              required
-              className="bg-black/5 border-black/10 focus-visible:ring-primary text-black h-12 rounded-xl"
-            />
+            <div className="relative flex items-center">
+              <div className="absolute left-3 flex items-center pointer-events-none">
+                <span className="text-black/40 font-medium border-r border-black/10 pr-3 mr-1">+91</span>
+              </div>
+              <Input
+                id="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => {
+                  let value = e.target.value.replace(/\D/g, '') // Remove non-digits
+                  if (value.startsWith('91') && value.length > 10) {
+                    value = value.substring(2)
+                  }
+                  if (value.length > 10) {
+                    value = value.substring(0, 10)
+                  }
+                  setFormData({ ...formData, phone: value })
+                }}
+                onPaste={(e) => {
+                  e.preventDefault()
+                  let pastedData = e.clipboardData.getData('text').replace(/\D/g, '')
+                  if (pastedData.startsWith('91') && pastedData.length > 10) {
+                    pastedData = pastedData.substring(2)
+                  }
+                  if (pastedData.length > 10) {
+                    pastedData = pastedData.substring(0, 10)
+                  }
+                  setFormData({ ...formData, phone: pastedData })
+                }}
+                required
+                placeholder="10 digit mobile number"
+                className="bg-black/5 border-black/10 focus-visible:ring-primary text-black h-12 rounded-xl pl-16 w-full"
+              />
+            </div>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="branch" className="text-black/70">Branch *</Label>

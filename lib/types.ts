@@ -42,6 +42,7 @@ export interface Settings {
   id: string
   user_id: string
   reminder_days_before: number
+  reminder_time: string // Format: "HH:mm" (e.g., "09:00")
   created_at: string
   updated_at: string
 }
