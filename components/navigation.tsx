@@ -6,11 +6,12 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
-import { LayoutDashboard, Users, Settings, LogOut, Hexagon } from 'lucide-react'
+import { LayoutDashboard, Users, Calendar, Settings, LogOut, Hexagon } from 'lucide-react'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/members', label: 'Members', icon: Users },
+  { href: '/events', label: 'Events', icon: Calendar },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -40,7 +41,10 @@ export function Navigation() {
         </div>
         <nav className="flex items-center gap-2 px-4 pb-4 overflow-x-auto no-scrollbar">
           {navItems.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = item.href === '/dashboard' 
+              ? pathname === '/dashboard' 
+              : pathname.startsWith(item.href)
+
             return (
               <Link
                 key={item.href}
@@ -86,7 +90,10 @@ export function Navigation() {
           
           <nav className="flex-1 flex flex-col gap-3 relative z-10">
             {navItems.map((item) => {
-              const isActive = pathname === item.href
+              const isActive = item.href === '/dashboard' 
+                ? pathname === '/dashboard' 
+                : pathname.startsWith(item.href)
+
               return (
                 <Link
                   key={item.href}

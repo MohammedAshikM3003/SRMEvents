@@ -20,6 +20,7 @@ interface MemberFormData {
   name: string
   date_of_birth: string
   blood_group: string
+  branch: string
   phone: string
   address: string
   marital_status: string
@@ -44,6 +45,7 @@ const defaultFormData: MemberFormData = {
   name: '',
   date_of_birth: '',
   blood_group: '',
+  branch: '',
   phone: '',
   address: '',
   marital_status: 'single',
@@ -63,6 +65,7 @@ export function MemberForm({ initialData, userId, onSuccess }: MemberFormProps) 
     name: initialData.name,
     date_of_birth: initialData.date_of_birth,
     blood_group: initialData.blood_group || '',
+    branch: initialData.branch || '',
     phone: initialData.phone,
     address: initialData.address || '',
     marital_status: initialData.marital_status,
@@ -91,6 +94,7 @@ export function MemberForm({ initialData, userId, onSuccess }: MemberFormProps) 
       name: formData.name,
       date_of_birth: formData.date_of_birth,
       blood_group: formData.blood_group || null,
+      branch: formData.branch || null,
       phone: formData.phone,
       address: formData.address || null,
       marital_status: formData.marital_status,
@@ -187,6 +191,23 @@ export function MemberForm({ initialData, userId, onSuccess }: MemberFormProps) 
               required
               className="bg-black/5 border-black/10 focus-visible:ring-primary text-black h-12 rounded-xl"
             />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="branch" className="text-black/70">Branch *</Label>
+            <Select
+              value={formData.branch}
+              onValueChange={(value) => setFormData({ ...formData, branch: value })}
+              required
+            >
+              <SelectTrigger className="bg-black/5 border-black/10 text-black h-12 rounded-xl">
+                <SelectValue placeholder="Select branch" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border-black/10 text-black">
+                <SelectItem value="Tiruvallur (TRL)">Tiruvallur (TRL)</SelectItem>
+                <SelectItem value="oddanchatram (ODC)">Oddanchatram (ODC)</SelectItem>
+                <SelectItem value="Dindigul (DGL)">Dindigul (DGL)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="address" className="text-black/70">Address</Label>

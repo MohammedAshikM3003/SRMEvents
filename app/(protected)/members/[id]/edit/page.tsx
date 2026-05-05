@@ -6,23 +6,26 @@ import { Button } from '@/components/ui/button'
 import { notFound } from 'next/navigation'
 
 interface EditMemberPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default async function EditMemberPage({ params }: EditMemberPageProps) {
-  const { id } = params
+  const { id } = await params
   const supabase = await createClient()
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  const userId = user?.id || '105ea82f-76d3-4c88-b03d-e135e55d88b3'
 
-  const { data: member } = await supabase
-    .from('members')
-    .select('*')
-    .eq('id', id)
-    .single()
+  // Fetch user and member in parallel to reduce navigation lag
+  const [{ data: { user } }, { data: member }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from('members')
+      .select('*')
+      .eq('id', id)
+      .single()
+  ])
+
+  const userId = user?.id || '105ea82f-76d3-4c88-b03d-e135e55d88b3'
 
   if (!member) {
     notFound()

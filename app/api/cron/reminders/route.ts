@@ -1,6 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import * as nodemailer from 'nodemailer'
 import { NextResponse } from 'next/server'
+import { formatDate } from '@/lib/utils'
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -11,13 +12,11 @@ const transporter = nodemailer.createTransport({
 })
 
 export async function GET(request: Request) {
-  // Check for authorization header if needed (e.g., cron secret)
-  const authHeader = request.headers.get('authorization')
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    // For testing, we might skip this or use a query param
-  }
-
-  const supabase = await createClient()
+  const { origin } = new URL(request.url)
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   // 1. Get all user settings
   const { data: allSettings, error: settingsError } = await supabase
@@ -52,95 +51,163 @@ export async function GET(request: Request) {
 
     if (membersError || !members) continue
 
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    
-    const targetDate = new Date(today)
-    targetDate.setDate(today.getDate() + daysAhead)
-    const targetMonth = targetDate.getMonth()
-    const targetDay = targetDate.getDate()
+    // 4. Get existing acknowledgments for this year
+    const currentYear = new Date().getUTCFullYear().toString()
+    const { data: acknowledgments, error: ackError } = await supabase
+      .from('reminder_acknowledgments')
+      .select('*')
+      .gte('event_date', `${currentYear}-01-01`)
+      .lte('event_date', `${currentYear}-12-31`)
+
+    if (ackError) continue
+
+    const isAcknowledged = (memberId: string, type: string, month: number, day: number) => {
+      const dateStr = `${currentYear}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
+      return acknowledgments?.some(ack => 
+        ack.member_id === memberId && 
+        ack.event_type === type && 
+        ack.event_date === dateStr
+      )
+    }
 
     const upcomingEvents = []
 
-    for (const member of members) {
-      // Check Member Birthday
-      if (member.date_of_birth) {
-        const dob = new Date(member.date_of_birth)
-        if (dob.getMonth() === targetMonth && dob.getDate() === targetDay) {
-          upcomingEvents.push({
-            name: member.name,
-            type: 'Birthday',
-            date: dob,
-          })
-        }
-      }
+    const parseDateUTC = (dateStr: string) => {
+      const [year, month, day] = dateStr.split('-').map(Number)
+      return { year, month: month - 1, day }
+    }
 
-      // Check Marriage Anniversary
-      if (member.marital_status === 'married' && member.marriage_date) {
-        const dom = new Date(member.marriage_date)
-        if (dom.getMonth() === targetMonth && dom.getDate() === targetDay) {
-          upcomingEvents.push({
-            name: member.name,
-            type: 'Wedding Anniversary',
-            date: dom,
-          })
-        }
-      }
+    // Logic change: Check from 1 day ahead up to daysAhead
+    for (let d = 1; d <= daysAhead; d++) {
+      const today = new Date()
+      const targetDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + d))
+      const targetMonth = targetDate.getUTCMonth()
+      const targetDay = targetDate.getUTCDate()
+      const eventYearDate = `${targetDate.getUTCFullYear()}-${(targetMonth + 1).toString().padStart(2, '0')}-${targetDay.toString().padStart(2, '0')}`
 
-      // Check Children Birthdays
-      if (member.number_of_children >= 1 && member.child1_dob) {
-        const dob = new Date(member.child1_dob)
-        if (dob.getMonth() === targetMonth && dob.getDate() === targetDay) {
-          upcomingEvents.push({
-            name: `${member.child1_name} (${member.name}'s child)`,
-            type: 'Birthday',
-            date: dob,
-          })
+      for (const member of members) {
+        // Check Member Birthday
+        if (member.date_of_birth) {
+          const { month, day } = parseDateUTC(member.date_of_birth)
+          if (month === targetMonth && day === targetDay) {
+            if (!isAcknowledged(member.id, 'Birthday', month, day)) {
+              upcomingEvents.push({ 
+                memberId: member.id,
+                name: member.name, 
+                type: 'Birthday', 
+                tamilType: 'பிறந்தநாள்',
+                date: member.date_of_birth,
+                eventYearDate,
+                daysRemaining: d,
+                branch: member.branch
+              })
+            }
+          }
         }
-      }
-      if (member.number_of_children >= 2 && member.child2_dob) {
-        const dob = new Date(member.child2_dob)
-        if (dob.getMonth() === targetMonth && dob.getDate() === targetDay) {
-          upcomingEvents.push({
-            name: `${member.child2_name} (${member.name}'s child)`,
-            type: 'Birthday',
-            date: dob,
-          })
+
+        // Check Marriage Anniversary
+        if (member.marital_status === 'married' && member.marriage_date) {
+          const { month, day } = parseDateUTC(member.marriage_date)
+          if (month === targetMonth && day === targetDay) {
+            if (!isAcknowledged(member.id, 'Wedding Anniversary', month, day)) {
+              upcomingEvents.push({ 
+                memberId: member.id,
+                name: member.name, 
+                type: 'Wedding Anniversary', 
+                tamilType: 'திருமண நாள்',
+                date: member.marriage_date,
+                eventYearDate,
+                daysRemaining: d,
+                branch: member.branch
+              })
+            }
+          }
         }
-      }
-      if (member.number_of_children >= 3 && member.child3_dob) {
-        const dob = new Date(member.child3_dob)
-        if (dob.getMonth() === targetMonth && dob.getDate() === targetDay) {
-          upcomingEvents.push({
-            name: `${member.child3_name} (${member.name}'s child)`,
-            type: 'Birthday',
-            date: dob,
-          })
-        }
+
+        // Check Children Birthdays
+        const children = [
+          { name: member.child1_name, dob: member.child1_dob, label: 'child1' },
+          { name: member.child2_name, dob: member.child2_dob, label: 'child2' },
+          { name: member.child3_name, dob: member.child3_dob, label: 'child3' }
+        ]
+
+        children.forEach((child, index) => {
+          if (child.dob && member.number_of_children > index) {
+            const { month, day } = parseDateUTC(child.dob)
+            if (month === targetMonth && day === targetDay) {
+              const type = 'Child Birthday'
+              if (!isAcknowledged(member.id, type, month, day)) {
+                upcomingEvents.push({ 
+                  memberId: member.id,
+                  name: `${child.name} (${member.name}'s child)`, 
+                  type, 
+                  tamilType: `பிறந்தநாள் (${child.name})`,
+                  date: child.dob,
+                  eventYearDate,
+                  daysRemaining: d,
+                  branch: member.branch
+                })
+              }
+            }
+          }
+        })
       }
     }
 
     if (upcomingEvents.length > 0) {
-      // Send Email
       const emailList = contacts.map(c => c.contact_value).join(', ')
-      const eventListHtml = upcomingEvents.map(event => 
-        `<li><strong>${event.name}</strong> - ${event.type}</li>`
+      
+      const getDoneLink = (event: any) => {
+        return `${origin}/api/reminders/acknowledge?memberId=${event.memberId}&type=${encodeURIComponent(event.type)}&date=${event.eventYearDate}`
+      }
+
+      // Tamil Event List
+      const tamilEventListHtml = upcomingEvents.map(event => 
+        `<li style="margin-bottom: 15px;">
+          <strong>${event.name}</strong> - ${event.tamilType} <br/>
+          கிளை: ${event.branch || 'N/A'} | தேதி: ${formatDate(event.date)} (${event.daysRemaining} நாட்களில்) <br/>
+          <a href="${getDoneLink(event)}" style="display: inline-block; margin-top: 5px; padding: 5px 10px; background-color: #10b981; color: white; text-decoration: none; border-radius: 5px; font-size: 12px;">Done / முடிந்தது</a>
+        </li>`
+      ).join('')
+
+      // English Event List
+      const englishEventListHtml = upcomingEvents.map(event => 
+        `<li style="margin-bottom: 15px;">
+          <strong>${event.name}</strong> - ${event.type} <br/>
+          Branch: ${event.branch || 'N/A'} | Date: ${formatDate(event.date)} (in ${event.daysRemaining} days) <br/>
+          <a href="${getDoneLink(event)}" style="display: inline-block; margin-top: 5px; padding: 5px 10px; background-color: #10b981; color: white; text-decoration: none; border-radius: 5px; font-size: 12px;">Mark as Done</a>
+        </li>`
       ).join('')
 
       try {
         await transporter.sendMail({
           from: `"SRM Events" <${process.env.SMTP_EMAIL}>`,
           to: emailList,
-          subject: `Upcoming Event Reminder: ${upcomingEvents.length} event(s) in ${daysAhead} days`,
+          subject: `Upcoming Event Reminders (${upcomingEvents.length} events)`,
           html: `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-              <h2 style="color: #1e293b;">Event Reminders</h2>
-              <p>The following events are coming up in <strong>${daysAhead}</strong> day(s):</p>
-              <ul style="color: #334155;">
-                ${eventListHtml}
-              </ul>
-              <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-              <p style="font-size: 12px; color: #64748b;">This is an automated reminder from SRM LifeStyle Events.</p>
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+              
+              <!-- Tamil Section -->
+              <div style="margin-bottom: 30px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px;">
+                <h2 style="color: #6366f1; margin-top: 0;">நிகழ்வு நினைவூட்டல்கள்</h2>
+                <ul style="color: #334155; line-height: 1.6; list-style-type: none; padding-left: 0;">
+                  ${tamilEventListHtml}
+                </ul>
+              </div>
+
+              <!-- English Section -->
+              <div>
+                <h2 style="color: #6366f1; margin-top: 0;">Event Reminders</h2>
+                <ul style="color: #334155; line-height: 1.6; list-style-type: none; padding-left: 0;">
+                  ${englishEventListHtml}
+                </ul>
+              </div>
+
+              <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 25px 0;" />
+              <p style="font-size: 12px; color: #94a3b8; text-align: center;">
+                இது SRM LifeStyle Events-இின் தானியங்கி நினைவூட்டல் ஆகும். 'Done' பொத்தானை அழுத்தினால் அடுத்த நினைவூட்டல் வராது. <br/>
+                This is an automated reminder. Click 'Done' to stop reminders for that event.
+              </p>
             </div>
           `
         })

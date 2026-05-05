@@ -6,6 +6,7 @@ import { Member, UpcomingEvent } from '@/lib/types'
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Calendar, Users, BellRing, Sparkles } from 'lucide-react'
+import { formatDate } from '@/lib/utils'
 
 interface DashboardContentProps {
   members: Member[]
@@ -259,7 +260,7 @@ export function DashboardContent({ members, reminderDays }: DashboardContentProp
                     <p className="text-sm font-medium text-black/70 mt-1">{getEventTypeLabel(event.eventType)}</p>
                     <div className="flex flex-wrap items-center gap-4 mt-2">
                       <p className="text-sm text-black/50 bg-white/20 px-3 py-1 rounded-full">
-                        {event.eventDate.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+                        {formatDate(event.eventDate)}
                       </p>
                       <p className="text-sm text-black/50 bg-white/20 px-3 py-1 rounded-full">
                         {event.phone}

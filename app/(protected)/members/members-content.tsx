@@ -12,6 +12,7 @@ import { Member } from '@/lib/types'
 import { motion } from 'framer-motion'
 import { Search, Plus, Edit2, Trash2, UserCircle } from 'lucide-react'
 import Link from 'next/link'
+import { formatDate } from '@/lib/utils'
 
 interface MembersContentProps {
   members: Member[]
@@ -113,9 +114,7 @@ export function MembersContent({ members, userId }: MembersContentProps) {
                       </div>
                     </TableCell>
                     <TableCell className="text-black/70">
-                      {new Date(member.date_of_birth).toLocaleDateString('en-IN', {
-                        day: 'numeric', month: 'short', year: 'numeric'
-                      })}
+                      {formatDate(member.date_of_birth)}
                     </TableCell>
                     <TableCell className="text-black/70 font-mono text-sm">{member.phone}</TableCell>
                     <TableCell>

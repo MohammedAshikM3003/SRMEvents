@@ -4,6 +4,7 @@ export interface Member {
   name: string
   date_of_birth: string
   blood_group: string | null
+  branch: 'Tiruvallur (TRL)' | 'oddanchatram (ODC)' | 'Dindigul (DGL)' | null
   phone: string
   address: string | null
   marital_status: string
@@ -18,6 +19,14 @@ export interface Member {
   has_insurance: boolean
   created_at: string
   updated_at: string
+}
+
+export interface ReminderAcknowledgment {
+  id: string
+  member_id: string
+  event_type: 'Birthday' | 'Wedding Anniversary' | 'Child Birthday'
+  event_date: string // The actual date of the event (e.g., 2026-05-06)
+  acknowledged_at: string
 }
 
 export interface NotificationContact {
