@@ -294,7 +294,7 @@ export function SettingsContent({ contacts, settings, userId }: SettingsContentP
             <div className="grid gap-3">
               <div className="flex items-center justify-between">
                 <Label htmlFor="reminder_time" className="text-black/80">Preferred Notification Time (Daily)</Label>
-                <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-black/10 text-black/40">Hobby Plan: Daily @ 1AM UTC</Badge>
+                <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-black/10 text-black/40">Hobby Plan: Daily @ 7AM UTC</Badge>
               </div>
               <Select
                 value={reminderTime}
