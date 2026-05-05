@@ -27,18 +27,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: settingsError.message }, { status: 500 })
   }
 
-  const currentHour = new Date().getUTCHours().toString().padStart(2, '0') + ':00'
   const results = []
 
   for (const settings of allSettings) {
     const userId = settings.user_id
     const daysAhead = settings.reminder_days_before || 7
-    const preferredTime = settings.reminder_time || '09:00'
-
-    if (preferredTime !== currentHour) {
-      results.push({ userId, status: 'skipped_time', preferredTime, currentHour })
-      continue
-    }
 
     // 2. Get notification contacts for this user
     const { data: contacts, error: contactsError } = await supabase
