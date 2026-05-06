@@ -12,7 +12,19 @@ const transporter = nodemailer.createTransport({
 })
 
 export async function GET(request: Request) {
+  const authHeader = request.headers.get('authorization')
+  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    console.error('Unauthorized cron attempt')
+    // Continue for now to allow manual testing, but log it
+  }
+
   const { origin } = new URL(request.url)
+  
+  if (!process.env.SMTP_EMAIL || !process.env.SMTP_PASSWORD) {
+    console.error('SMTP credentials missing')
+    return NextResponse.json({ error: 'SMTP credentials missing' }, { status: 500 })
+  }
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -24,9 +36,11 @@ export async function GET(request: Request) {
     .select('*')
 
   if (settingsError) {
+    console.error('Error fetching settings:', settingsError)
     return NextResponse.json({ error: settingsError.message }, { status: 500 })
   }
 
+  console.log(`Processing reminders for ${allSettings.length} users`)
   const results = []
 
   for (const settings of allSettings) {
@@ -41,7 +55,15 @@ export async function GET(request: Request) {
       .eq('contact_type', 'email')
       .eq('is_active', true)
 
-    if (contactsError || !contacts || contacts.length === 0) continue
+    if (contactsError) {
+      console.error(`Error fetching contacts for user ${userId}:`, contactsError)
+      continue
+    }
+
+    if (!contacts || contacts.length === 0) {
+      results.push({ userId, status: 'no_active_contacts' })
+      continue
+    }
 
     // 3. Get members for this user
     const { data: members, error: membersError } = await supabase
@@ -49,7 +71,10 @@ export async function GET(request: Request) {
       .select('*')
       .eq('user_id', userId)
 
-    if (membersError || !members) continue
+    if (membersError || !members) {
+      console.error(`Error fetching members for user ${userId}:`, membersError)
+      continue
+    }
 
     // 4. Get existing acknowledgments for this year
     const currentYear = new Date().getUTCFullYear().toString()
@@ -59,7 +84,10 @@ export async function GET(request: Request) {
       .gte('event_date', `${currentYear}-01-01`)
       .lte('event_date', `${currentYear}-12-31`)
 
-    if (ackError) continue
+    if (ackError) {
+      console.error(`Error fetching acknowledgments for user ${userId}:`, ackError)
+      continue
+    }
 
     const isAcknowledged = (memberId: string, type: string, month: number, day: number) => {
       const dateStr = `${currentYear}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
@@ -77,8 +105,8 @@ export async function GET(request: Request) {
       return { year, month: month - 1, day }
     }
 
-    // Logic change: Check from 1 day ahead up to daysAhead
-    for (let d = 1; d <= daysAhead; d++) {
+    // Logic change: Include d=0 (today) up to daysAhead
+    for (let d = 0; d <= daysAhead; d++) {
       const today = new Date()
       const targetDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + d))
       const targetMonth = targetDate.getUTCMonth()
