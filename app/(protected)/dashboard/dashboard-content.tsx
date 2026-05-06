@@ -4,9 +4,9 @@ import React, { useMemo, useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Member, UpcomingEvent } from '@/lib/types'
-import { motion } from 'framer-motion'
-import { Calendar, Users, BellRing, Sparkles, CalendarDays } from 'lucide-react'
-import { formatDate } from '@/lib/utils'
+import { motion, Variants } from 'framer-motion'
+import { Calendar, Users, Bell, Sparkles, CalendarDays } from 'lucide-react'
+import { formatDate, cn } from '@/lib/utils'
 import { useTranslation } from '@/components/language-provider'
 
 interface DashboardContentProps {
@@ -24,13 +24,13 @@ function getUpcomingEvents(members: Member[], daysAhead: number): UpcomingEvent[
     if (member.date_of_birth) {
       const dob = new Date(member.date_of_birth)
       const thisYearBirthday = new Date(today.getFullYear(), dob.getMonth(), dob.getDate())
-      
+
       if (thisYearBirthday < today) {
         thisYearBirthday.setFullYear(today.getFullYear() + 1)
       }
-      
+
       const daysUntil = Math.ceil((thisYearBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-      
+
       if (daysUntil <= daysAhead) {
         events.push({
           id: `${member.id}-birthday`,
@@ -48,13 +48,13 @@ function getUpcomingEvents(members: Member[], daysAhead: number): UpcomingEvent[
     if (member.marital_status === 'married' && member.marriage_date) {
       const anniversary = new Date(member.marriage_date)
       const thisYearAnniversary = new Date(today.getFullYear(), anniversary.getMonth(), anniversary.getDate())
-      
+
       if (thisYearAnniversary < today) {
         thisYearAnniversary.setFullYear(today.getFullYear() + 1)
       }
-      
+
       const daysUntil = Math.ceil((thisYearAnniversary.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-      
+
       if (daysUntil <= daysAhead) {
         events.push({
           id: `${member.id}-anniversary`,
@@ -79,13 +79,13 @@ function getUpcomingEvents(members: Member[], daysAhead: number): UpcomingEvent[
       if (child.name && child.dob) {
         const childDob = new Date(child.dob)
         const thisYearBirthday = new Date(today.getFullYear(), childDob.getMonth(), childDob.getDate())
-        
+
         if (thisYearBirthday < today) {
           thisYearBirthday.setFullYear(today.getFullYear() + 1)
         }
-        
+
         const daysUntil = Math.ceil((thisYearBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-        
+
         if (daysUntil <= daysAhead) {
           events.push({
             id: `${member.id}-child-${index}`,
@@ -154,7 +154,7 @@ export function DashboardContent({ members, reminderDays }: DashboardContentProp
   const thisMonthEventsCount = useMemo(() => {
     return getThisMonthEventsCount(members)
   }, [members])
-  
+
   const todayEvents = upcomingEvents.filter(e => e.daysUntil === 0)
   const upcomingThisWeek = upcomingEvents.filter(e => e.daysUntil > 0 && e.daysUntil <= 7)
 
@@ -166,7 +166,7 @@ export function DashboardContent({ members, reminderDays }: DashboardContentProp
     }
   }
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -174,48 +174,48 @@ export function DashboardContent({ members, reminderDays }: DashboardContentProp
     }
   }
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 10 },
     show: { opacity: 1, y: 0, transition: { type: "spring", bounce: 0.3, duration: 0.4 } }
   }
 
   const stats = [
-    { 
+    {
       title: 'TOTAL MEMBERS',
       subtitle: 'மொத்த உறுப்பினர்கள்',
-      value: members.length, 
-      icon: Users, 
+      value: members.length,
+      icon: Users,
       color: "from-blue-600 to-indigo-500",
       shadow: "shadow-blue-500/20"
     },
-    { 
+    {
       title: 'TODAY EVENTS',
       subtitle: 'இன்றைய நிகழ்வுகள்',
-      value: todayEvents.length, 
-      icon: BellRing, 
+      value: todayEvents.length,
+      icon: Bell,
       color: "from-rose-600 to-pink-500",
       shadow: "shadow-rose-500/20"
     },
-    { 
+    {
       title: 'THIS WEEK',
       subtitle: 'இந்த வாரம்',
-      value: upcomingThisWeek.length, 
-      icon: Calendar, 
+      value: upcomingThisWeek.length,
+      icon: Calendar,
       color: "from-amber-600 to-orange-500",
       shadow: "shadow-amber-500/20"
     },
-    { 
+    {
       title: 'THIS MONTH EVENTS',
       subtitle: 'இந்த மாத நிகழ்வுகள்',
-      value: thisMonthEventsCount, 
-      icon: CalendarDays, 
+      value: thisMonthEventsCount,
+      icon: CalendarDays,
       color: "from-emerald-600 to-teal-500",
       shadow: "shadow-emerald-500/20"
     }
   ]
 
   return (
-    <motion.div 
+    <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="show"
@@ -233,9 +233,9 @@ export function DashboardContent({ members, reminderDays }: DashboardContentProp
       {/* Stats Grid */}
       <motion.div variants={itemVariants} className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, i) => (
-          <motion.div 
-            key={i} 
-            whileHover={{ y: -5, scale: 1.02 }} 
+          <motion.div
+            key={i}
+            whileHover={{ y: -5, scale: 1.02 }}
             className={cn(
               "glass-card relative overflow-hidden group border-none p-6 shadow-2xl transition-all duration-300",
               stat.shadow
@@ -246,7 +246,7 @@ export function DashboardContent({ members, reminderDays }: DashboardContentProp
               "absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-gradient-to-br opacity-10 blur-2xl group-hover:opacity-20 transition-opacity",
               stat.color
             )} />
-            
+
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-6">
                 <div className={cn(
@@ -260,7 +260,7 @@ export function DashboardContent({ members, reminderDays }: DashboardContentProp
                   <p className="text-[11px] font-bold text-black/30 leading-none">{stat.subtitle}</p>
                 </div>
               </div>
-              
+
               <div className="flex items-baseline gap-2">
                 <h3 className="text-4xl font-black text-black tracking-tighter">{stat.value}</h3>
                 <span className="text-sm font-bold text-black/40">Total</span>
@@ -289,34 +289,34 @@ export function DashboardContent({ members, reminderDays }: DashboardContentProp
                 Action Required
               </Badge>
             </div>
-            
+
             <div className="grid gap-4 md:grid-cols-2">
               {todayEvents.map((event, i) => (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 * i }}
-                  key={event.id} 
+                  key={event.id}
                   className="flex items-center justify-between p-5 rounded-[1.5rem] bg-rose-500/[0.03] border border-rose-500/10 hover:bg-rose-500/[0.06] transition-all group"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-lg font-black text-black truncate leading-tight">
-                      {event.eventType === 'child_birthday' 
+                      {event.eventType === 'child_birthday'
                         ? event.childName
                         : event.memberName}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
-                       <span className="text-xs font-black text-rose-600/80 uppercase tracking-widest">
-                          {getEventTypeLabel(event.eventType)}
-                       </span>
-                       {event.eventType === 'child_birthday' && (
-                         <span className="text-[10px] font-bold text-black/30 truncate">({event.memberName}'s child)</span>
-                       )}
+                      <span className="text-xs font-black text-rose-600/80 uppercase tracking-widest">
+                        {getEventTypeLabel(event.eventType)}
+                      </span>
+                      {event.eventType === 'child_birthday' && (
+                        <span className="text-[10px] font-bold text-black/30 truncate">({event.memberName}'s child)</span>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <a href={`tel:${event.phone}`} className="w-10 h-10 rounded-xl bg-white border border-rose-500/10 flex items-center justify-center text-rose-600 shadow-sm hover:bg-rose-600 hover:text-white transition-all">
-                       <BellRing className="w-4 h-4" />
+                      <Bell className="w-4 h-4" />
                     </a>
                   </div>
                 </motion.div>
@@ -352,30 +352,30 @@ export function DashboardContent({ members, reminderDays }: DashboardContentProp
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {upcomingEvents.slice(0, 6).map((event, i) => (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.05 * i }}
-                  key={event.id} 
+                  key={event.id}
                   className="group flex flex-col p-6 rounded-[2rem] bg-black/[0.02] border border-black/[0.03] hover:bg-white hover:shadow-2xl hover:shadow-black/5 transition-all duration-500"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <Badge className="bg-black/5 text-black/60 border-none px-3 py-1 rounded-lg font-bold text-[10px] uppercase tracking-widest">
-                       {getEventTypeLabel(event.eventType)}
+                      {getEventTypeLabel(event.eventType)}
                     </Badge>
                     <span className="text-[10px] font-black text-black/20 uppercase">{formatDate(event.eventDate)}</span>
                   </div>
-                  
+
                   <p className="text-lg font-black text-black group-hover:text-primary transition-colors truncate mb-1">
-                    {event.eventType === 'child_birthday' 
+                    {event.eventType === 'child_birthday'
                       ? event.childName
                       : event.memberName}
                   </p>
-                  
+
                   {event.eventType === 'child_birthday' && (
                     <p className="text-[10px] font-bold text-black/30 mb-4 truncate italic">Child of {event.memberName}</p>
                   )}
-                  
+
                   <div className="mt-auto pt-4 flex items-center justify-between border-t border-black/[0.03]">
                     <div className="flex items-baseline gap-1">
                       <span className={cn(
@@ -385,9 +385,9 @@ export function DashboardContent({ members, reminderDays }: DashboardContentProp
                       <span className="text-[10px] font-bold text-black/30 uppercase">Days Left</span>
                     </div>
                     <div className="flex gap-2">
-                       <a href={`tel:${event.phone}`} className="p-2 rounded-xl bg-black/[0.03] text-black/40 hover:bg-primary hover:text-white transition-all">
-                          <Bell className="w-3.5 h-3.5" />
-                       </a>
+                      <a href={`tel:${event.phone}`} className="p-2 rounded-xl bg-black/[0.03] text-black/40 hover:bg-primary hover:text-white transition-all">
+                        <Bell className="w-3.5 h-3.5" />
+                      </a>
                     </div>
                   </div>
                 </motion.div>

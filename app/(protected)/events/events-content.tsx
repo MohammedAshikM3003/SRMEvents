@@ -13,7 +13,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { motion } from 'framer-motion'
+import { motion, Variants } from 'framer-motion'
 import { Search, Calendar, Cake, Heart, Baby, Phone, Bell, Edit2, Trash2, MoreVertical, CalendarDays, Sparkles } from 'lucide-react'
 import { format, differenceInDays, addYears, startOfDay, setYear } from 'date-fns'
 import { cn, formatDate } from '@/lib/utils'
@@ -25,6 +25,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface EventsContentProps {
   members: Member[]
@@ -105,12 +116,12 @@ export function EventsContent({ members }: EventsContentProps) {
     }
   }
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: { opacity: 1, transition: { staggerChildren: 0.05 } }
   }
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 10 },
     show: { opacity: 1, y: 0, transition: { type: "spring", bounce: 0.3, duration: 0.4 } }
   }

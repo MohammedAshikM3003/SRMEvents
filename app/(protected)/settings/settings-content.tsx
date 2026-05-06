@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import { NotificationContact, Settings } from '@/lib/types'
 import { sendOtp, verifyOtp, sendMasterVerification, verifyMasterOtp, sendMasterReminder } from '@/app/actions/otp'
-import { motion } from 'framer-motion'
+import { motion, Variants } from 'framer-motion'
 import { ShieldCheck, Mail, Bell, Settings2, Trash2, TerminalSquare, Languages } from 'lucide-react'
 import { useTranslation } from '@/components/language-provider'
 import { LanguageToggle } from '@/components/language-toggle'
@@ -159,12 +159,12 @@ export function SettingsContent({ contacts, settings, userId }: SettingsContentP
 
   const emailContacts = contacts.filter(c => c.contact_type === 'email')
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: { opacity: 1, transition: { staggerChildren: 0.05 } }
   }
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 10 },
     show: { opacity: 1, y: 0, transition: { type: "spring", bounce: 0.3, duration: 0.4 } }
   }

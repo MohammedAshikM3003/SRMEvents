@@ -77,11 +77,8 @@ export function Navigation() {
       </header>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-72 h-screen sticky top-0 p-6 z-40">
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+      <aside className="hidden md:flex flex-col w-72 shrink-0 h-screen sticky top-0 p-6 z-40">
+        <div 
           className="glass-panel flex-1 rounded-[2rem] p-6 flex flex-col h-full border border-black/5 shadow-[0_8px_32px_rgba(0,0,0,0.05)] relative overflow-hidden"
         >
           {/* Subtle glow effect behind sidebar */}
@@ -90,24 +87,15 @@ export function Navigation() {
           {/* Centered Branding Section */}
           <div className="mb-12 px-2 pt-4 relative z-10 flex flex-col items-center text-center">
             <Link href="/dashboard" className="flex flex-col items-center group">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center shadow-lg group-hover:shadow-primary/30 transition-all duration-500 group-hover:scale-110 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center shadow-lg group-hover:shadow-primary/30 transition-all duration-500 group-hover:scale-110 mb-4 shrink-0">
                 <Hexagon className="w-7 h-7 text-white" />
               </div>
               
               <div className="flex flex-col items-center">
                 <span className="text-2xl font-black text-black tracking-tighter leading-none mb-1">SRM</span>
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={language}
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    transition={{ duration: 0.2 }}
-                    className="text-xl font-bold text-black/70 tracking-tight leading-none"
-                  >
-                    {language === 'en' ? 'LifeStyle' : 'லைஃப்ஸ்டைல்'}
-                  </motion.span>
-                </AnimatePresence>
+                <span className="text-xl font-bold text-black/70 tracking-tight leading-none">
+                  {language === 'en' ? 'LifeStyle' : 'லைஃப்ஸ்டைல்'}
+                </span>
               </div>
             </Link>
           </div>
@@ -152,7 +140,7 @@ export function Navigation() {
               <span className="text-base font-medium">{t('logout')}</span>
             </Button>
           </div>
-        </motion.div>
+        </div>
       </aside>
     </>
   )
