@@ -8,8 +8,10 @@ import { useState, useEffect } from 'react'
 import { Eye, EyeOff, Hexagon } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { VolumeScrollbar } from '@/components/ui/volume-scrollbar'
+import { useTranslation } from '@/components/language-provider'
 
 export default function LoginPage() {
+  const { t } = useTranslation()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -18,7 +20,7 @@ export default function LoginPage() {
   const router = useRouter()
 
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn')
+    const isLoggedIn = document.cookie.split('; ').find(row => row.startsWith('isLoggedIn='))?.split('=')[1]
     if (isLoggedIn === 'true') {
       router.push('/dashboard')
     }
@@ -30,10 +32,12 @@ export default function LoginPage() {
     setError(null)
 
     if (username.trim() === 'SRMdgl' && password === 'SRMdgl') {
+      // Set a session cookie
+      document.cookie = "isLoggedIn=true; path=/; max-age=86400; SameSite=Lax"
       localStorage.setItem('isLoggedIn', 'true')
       router.push('/dashboard')
     } else {
-      setError('Invalid username or password')
+      setError(t('invalid_credentials'))
       setIsLoading(false)
     }
   }
@@ -59,9 +63,9 @@ export default function LoginPage() {
                   <Hexagon className="w-7 h-7 text-white" />
                 </div>
                 <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                  SRM LifeStyle
+                  {t('srm_lifestyle')}
                 </h1>
-                <p className="text-slate-500 font-medium">Event Reminder System</p>
+                <p className="text-slate-500 font-medium">{t('event_reminder_system')}</p>
               </div>
 
               <motion.div
@@ -71,9 +75,9 @@ export default function LoginPage() {
                 className="glass-card p-8 sm:p-10 border-white shadow-xl shadow-black/[0.03]"
               >
                 <div className="mb-8">
-                  <h2 className="text-2xl font-bold text-slate-900">Welcome Back</h2>
+                  <h2 className="text-2xl font-bold text-slate-900">{t('welcome_back')}</h2>
                   <p className="text-slate-500 text-sm mt-1">
-                    Access your member events and alerts
+                    {t('access_member_events')}
                   </p>
                 </div>
                 
@@ -81,11 +85,11 @@ export default function LoginPage() {
                   <div className="flex flex-col gap-5">
                     
                     <div className="grid gap-2">
-                      <Label htmlFor="username" className="text-slate-700 font-semibold ml-1">Username</Label>
+                      <Label htmlFor="username" className="text-slate-700 font-semibold ml-1">{t('username')}</Label>
                       <Input
                         id="username"
                         type="text"
-                        placeholder="SRMdgl"
+                        placeholder={t('enter_username')}
                         required
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
@@ -94,12 +98,12 @@ export default function LoginPage() {
                     </div>
 
                     <div className="grid gap-2">
-                      <Label htmlFor="password" className="text-slate-700 font-semibold ml-1">Password</Label>
+                      <Label htmlFor="password" className="text-slate-700 font-semibold ml-1">{t('password')}</Label>
                       <div className="relative">
                         <Input
                           id="password"
                           type={showPassword ? 'text' : 'password'}
-                          placeholder="SRMdgl"
+                          placeholder={t('enter_password')}
                           required
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
@@ -115,9 +119,6 @@ export default function LoginPage() {
                       </div>
                     </div>
 
-                    <div className="text-xs text-slate-400 text-center mt-1">
-                      Use <span className="font-mono bg-slate-100 px-1 rounded">SRMdgl</span> / <span className="font-mono bg-slate-100 px-1 rounded">SRMdgl</span> to bypass
-                    </div>
 
                     {error && (
                       <motion.p 
@@ -134,7 +135,7 @@ export default function LoginPage() {
                       className="w-full h-12 rounded-xl bg-slate-900 text-white hover:bg-slate-800 font-bold text-base mt-2 shadow-lg shadow-slate-200 transition-all active:scale-[0.98]" 
                       disabled={isLoading}
                     >
-                      {isLoading ? 'Signing in...' : 'Sign In'}
+                      {isLoading ? t('signing_in') : t('sign_in')}
                     </Button>
                     
                   </div>

@@ -43,6 +43,7 @@ export interface Settings {
   user_id: string
   reminder_days_before: number
   reminder_time: string // Format: "HH:mm" (e.g., "09:00")
+  language?: 'en' | 'ta'
   created_at: string
   updated_at: string
 }

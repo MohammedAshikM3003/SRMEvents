@@ -1,10 +1,22 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { LanguageProvider } from '@/components/language-provider'
+import { Poppins, Noto_Sans_Tamil } from 'next/font/google'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const poppins = Poppins({ 
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-poppins',
+  display: 'swap',
+})
+
+const notoTamil = Noto_Sans_Tamil({
+  subsets: ['tamil'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-noto-tamil',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'SRM LifeStyle Members - Event Reminder System',
@@ -35,10 +47,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="font-sans antialiased bg-background">
-        {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+    <html lang="en" suppressHydrationWarning className={`${poppins.variable} ${notoTamil.variable}`}>
+      <body className="font-sans antialiased bg-background" suppressHydrationWarning>
+        <LanguageProvider>
+          {children}
+          {process.env.NODE_ENV === 'production' && <Analytics />}
+        </LanguageProvider>
       </body>
     </html>
   )

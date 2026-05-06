@@ -29,7 +29,9 @@ export function VolumeScrollbar({ children }: VolumeScrollbarProps) {
 
     bar.style.display = 'block'
     const ratio = content.scrollTop / scrollableHeight
-    const maxTop = container.clientHeight - thumb.clientHeight - 80 
+    const barHeight = bar.clientHeight
+    const thumbHeight = thumb.clientHeight
+    const maxTop = barHeight - thumbHeight
     
     thumb.style.top = `${ratio * maxTop}px`
   }

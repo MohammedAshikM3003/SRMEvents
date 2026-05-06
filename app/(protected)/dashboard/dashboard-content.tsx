@@ -1,12 +1,13 @@
 'use client'
 
+import React, { useMemo, useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Member, UpcomingEvent } from '@/lib/types'
-import { useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Calendar, Users, BellRing, Sparkles } from 'lucide-react'
+import { Calendar, Users, BellRing, Sparkles, CalendarDays } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import { useTranslation } from '@/components/language-provider'
 
 interface DashboardContentProps {
   members: Member[]
@@ -104,26 +105,66 @@ function getUpcomingEvents(members: Member[], daysAhead: number): UpcomingEvent[
   return events.sort((a, b) => a.daysUntil - b.daysUntil)
 }
 
+function getThisMonthEventsCount(members: Member[]): number {
+  const today = new Date()
+  const currentMonth = today.getMonth()
+  let count = 0
+
+  members.forEach(member => {
+    const datesToCheck = [
+      member.date_of_birth,
+      member.marriage_date,
+      member.child1_dob,
+      member.child2_dob,
+      member.child3_dob
+    ]
+
+    datesToCheck.forEach(dateStr => {
+      if (dateStr) {
+        const date = new Date(dateStr)
+        if (date.getMonth() === currentMonth) {
+          count++
+        }
+      }
+    })
+  })
+
+  return count
+}
+
 function getEventBadgeVariant(daysUntil: number): 'destructive' | 'default' | 'secondary' {
   if (daysUntil === 0) return 'destructive'
   if (daysUntil <= 3) return 'default'
   return 'secondary'
 }
 
-function getEventTypeLabel(type: UpcomingEvent['eventType']): string {
-  switch (type) {
-    case 'birthday': return 'Birthday / பிறந்தநாள்'
-    case 'anniversary': return 'Anniversary / திருமண நாள்'
-    case 'child_birthday': return 'Child Birthday / குழந்தை பிறந்தநாள்'
-  }
-}
-
 export function DashboardContent({ members, reminderDays }: DashboardContentProps) {
-  const upcomingEvents = useMemo(() => getUpcomingEvents(members, reminderDays), [members, reminderDays])
+  const { t, language } = useTranslation()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const upcomingEvents = useMemo(() => {
+    if (!mounted) return []
+    return getUpcomingEvents(members, reminderDays)
+  }, [members, reminderDays, mounted])
+
+  const thisMonthEventsCount = useMemo(() => {
+    return getThisMonthEventsCount(members)
+  }, [members])
   
   const todayEvents = upcomingEvents.filter(e => e.daysUntil === 0)
   const upcomingThisWeek = upcomingEvents.filter(e => e.daysUntil > 0 && e.daysUntil <= 7)
-  const upcomingLater = upcomingEvents.filter(e => e.daysUntil > 7)
+
+  const getEventTypeLabel = (type: UpcomingEvent['eventType']): string => {
+    switch (type) {
+      case 'birthday': return t('birthday')
+      case 'anniversary': return t('anniversary')
+      case 'child_birthday': return t('child_birthday')
+    }
+  }
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -138,6 +179,41 @@ export function DashboardContent({ members, reminderDays }: DashboardContentProp
     show: { opacity: 1, y: 0, transition: { type: "spring", bounce: 0.3, duration: 0.4 } }
   }
 
+  const stats = [
+    { 
+      title: 'TOTAL MEMBERS',
+      subtitle: 'மொத்த உறுப்பினர்கள்',
+      value: members.length, 
+      icon: Users, 
+      color: "from-blue-600 to-indigo-500",
+      shadow: "shadow-blue-500/20"
+    },
+    { 
+      title: 'TODAY EVENTS',
+      subtitle: 'இன்றைய நிகழ்வுகள்',
+      value: todayEvents.length, 
+      icon: BellRing, 
+      color: "from-rose-600 to-pink-500",
+      shadow: "shadow-rose-500/20"
+    },
+    { 
+      title: 'THIS WEEK',
+      subtitle: 'இந்த வாரம்',
+      value: upcomingThisWeek.length, 
+      icon: Calendar, 
+      color: "from-amber-600 to-orange-500",
+      shadow: "shadow-amber-500/20"
+    },
+    { 
+      title: 'THIS MONTH EVENTS',
+      subtitle: 'இந்த மாத நிகழ்வுகள்',
+      value: thisMonthEventsCount, 
+      icon: CalendarDays, 
+      color: "from-emerald-600 to-teal-500",
+      shadow: "shadow-emerald-500/20"
+    }
+  ]
+
   return (
     <motion.div 
       variants={containerVariants}
@@ -146,73 +222,103 @@ export function DashboardContent({ members, reminderDays }: DashboardContentProp
       className="flex flex-col gap-8 relative z-10"
     >
       <motion.div variants={itemVariants}>
-        <h1 className="text-4xl font-extrabold text-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-black to-black/60">
-          Dashboard
+        <h1 className="text-4xl font-black text-black tracking-tighter">
+          {t('dashboard')}
         </h1>
-        <p className="text-black/60 mt-2 text-lg">
-          Upcoming events in the next {reminderDays} days
+        <p className="text-black/50 mt-2 text-lg font-medium">
+          Welcome back to your event control center
         </p>
       </motion.div>
 
-      {/* Stats */}
-      <motion.div variants={itemVariants} className="grid gap-6 md:grid-cols-4">
-        {[
-          { title: "Total Members", value: members.length, icon: Users, color: "from-blue-500 to-cyan-400" },
-          { title: "Today's Events", value: todayEvents.length, icon: BellRing, color: "from-red-500 to-rose-400" },
-          { title: "This Week", value: upcomingThisWeek.length, icon: Calendar, color: "from-violet-500 to-purple-400" },
-          { title: "Upcoming", value: upcomingLater.length, icon: Sparkles, color: "from-emerald-500 to-indigo-400" }
-        ].map((stat, i) => (
-          <motion.div key={i} whileHover={{ y: -5 }} className="glass-card relative overflow-hidden group">
-            <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${stat.color} opacity-70 group-hover:opacity-100 transition-opacity`} />
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-black/70 font-medium">{stat.title}</p>
-                <div className={`p-2 rounded-xl bg-black/5`}>
-                  <stat.icon className="w-5 h-5 text-black/80" />
+      {/* Stats Grid */}
+      <motion.div variants={itemVariants} className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat, i) => (
+          <motion.div 
+            key={i} 
+            whileHover={{ y: -5, scale: 1.02 }} 
+            className={cn(
+              "glass-card relative overflow-hidden group border-none p-6 shadow-2xl transition-all duration-300",
+              stat.shadow
+            )}
+          >
+            {/* Background Glow */}
+            <div className={cn(
+              "absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-gradient-to-br opacity-10 blur-2xl group-hover:opacity-20 transition-opacity",
+              stat.color
+            )} />
+            
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div className={cn(
+                  "p-3 rounded-2xl bg-gradient-to-br text-white shadow-lg",
+                  stat.color
+                )}>
+                  <stat.icon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-black text-black/40 tracking-widest leading-none mb-1">{stat.title}</p>
+                  <p className="text-[11px] font-bold text-black/30 leading-none">{stat.subtitle}</p>
                 </div>
               </div>
-              <h3 className="text-4xl font-bold text-black tracking-tight">{stat.value}</h3>
+              
+              <div className="flex items-baseline gap-2">
+                <h3 className="text-4xl font-black text-black tracking-tighter">{stat.value}</h3>
+                <span className="text-sm font-bold text-black/40">Total</span>
+              </div>
             </div>
           </motion.div>
         ))}
       </motion.div>
 
-      {/* Today's Events */}
+      {/* Today's Priority Events */}
       {todayEvents.length > 0 && (
-        <motion.div variants={itemVariants} className="glass-card border-red-500/30 overflow-hidden relative">
-          <div className="absolute inset-0 bg-red-500/5 pointer-events-none" />
-          <div className="p-6 relative z-10">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
-                <BellRing className="w-5 h-5 text-red-600" />
+        <motion.div variants={itemVariants} className="glass-card border-none bg-white shadow-2xl shadow-rose-500/5 overflow-hidden relative">
+          <div className="absolute top-0 left-0 w-1.5 h-full bg-rose-500" />
+          <div className="p-8">
+            <div className="mb-8 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/10 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-6 h-6 text-rose-600" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-black tracking-tight">{t('today').toUpperCase()} EVENTS</h2>
+                  <p className="text-rose-600 font-bold text-sm tracking-wide">இன்றைய நிகழ்வுகள்</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-2xl font-bold text-red-600">Today&apos;s Events</h2>
-                <p className="text-red-600/70 text-sm">இன்றைய நிகழ்வுகள்</p>
-              </div>
+              <Badge className="bg-rose-500 text-white border-none px-4 py-1.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-500/20">
+                Action Required
+              </Badge>
             </div>
-            <div className="flex flex-col gap-4">
+            
+            <div className="grid gap-4 md:grid-cols-2">
               {todayEvents.map((event, i) => (
                 <motion.div 
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 * i }}
                   key={event.id} 
-                  className="flex items-center justify-between p-5 rounded-2xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors"
+                  className="flex items-center justify-between p-5 rounded-[1.5rem] bg-rose-500/[0.03] border border-rose-500/10 hover:bg-rose-500/[0.06] transition-all group"
                 >
-                  <div>
-                    <p className="text-lg font-bold text-black">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-lg font-black text-black truncate leading-tight">
                       {event.eventType === 'child_birthday' 
-                        ? `${event.childName} (${event.memberName}&apos;s child)`
+                        ? event.childName
                         : event.memberName}
                     </p>
-                    <p className="text-sm font-medium text-red-700 mt-1">{getEventTypeLabel(event.eventType)}</p>
-                    <p className="text-sm text-black/60 mt-1 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
-                      Phone: {event.phone}
-                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                       <span className="text-xs font-black text-rose-600/80 uppercase tracking-widest">
+                          {getEventTypeLabel(event.eventType)}
+                       </span>
+                       {event.eventType === 'child_birthday' && (
+                         <span className="text-[10px] font-bold text-black/30 truncate">({event.memberName}'s child)</span>
+                       )}
+                    </div>
                   </div>
-                  <Badge variant="destructive" className="px-4 py-1.5 text-sm font-bold shadow-lg shadow-red-500/20">TODAY</Badge>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <a href={`tel:${event.phone}`} className="w-10 h-10 rounded-xl bg-white border border-rose-500/10 flex items-center justify-center text-rose-600 shadow-sm hover:bg-rose-600 hover:text-white transition-all">
+                       <BellRing className="w-4 h-4" />
+                    </a>
+                  </div>
                 </motion.div>
               ))}
             </div>
@@ -220,61 +326,70 @@ export function DashboardContent({ members, reminderDays }: DashboardContentProp
         </motion.div>
       )}
 
-      {/* Upcoming Events */}
-      <motion.div variants={itemVariants} className="glass-card">
-        <div className="p-6 border-b border-black/5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-black">Upcoming Events</h2>
-              <p className="text-black/60 text-sm">வரவிருக்கும் நிகழ்வுகள் ({reminderDays} days)</p>
+      {/* Upcoming Timeline Section */}
+      <motion.div variants={itemVariants} className="glass-card border-none bg-white shadow-2xl shadow-black/5 overflow-hidden">
+        <div className="p-8 border-b border-black/[0.03]">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <CalendarDays className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-black tracking-tight uppercase">{t('upcoming_events')}</h2>
+                <p className="text-primary font-bold text-sm tracking-wide">வரவிருக்கும் நிகழ்வுகள்</p>
+              </div>
             </div>
           </div>
         </div>
-        <div className="p-6">
+        <div className="p-8">
           {upcomingEvents.length === 0 ? (
-            <div className="py-12 flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mb-4">
-                <Sparkles className="w-8 h-8 text-black/20" />
+            <div className="py-20 flex flex-col items-center justify-center text-center">
+              <div className="w-20 h-20 rounded-full bg-black/[0.02] flex items-center justify-center mb-6">
+                <Sparkles className="w-10 h-10 text-black/10" />
               </div>
-              <p className="text-black/60 text-lg">No upcoming events in the next {reminderDays} days</p>
+              <p className="text-black/40 text-lg font-bold">{t('no_upcoming_events', { days: reminderDays })}</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-4">
-              {[...upcomingThisWeek, ...upcomingLater].map((event, i) => (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {upcomingEvents.slice(0, 6).map((event, i) => (
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.05 * i }}
                   key={event.id} 
-                  className="group flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-2xl bg-black/5 border border-black/5 hover:bg-black/10 hover:border-black/10 hover:shadow-lg transition-all"
+                  className="group flex flex-col p-6 rounded-[2rem] bg-black/[0.02] border border-black/[0.03] hover:bg-white hover:shadow-2xl hover:shadow-black/5 transition-all duration-500"
                 >
-                  <div className="mb-4 sm:mb-0">
-                    <p className="text-lg font-bold text-black group-hover:text-primary transition-colors">
-                      {event.eventType === 'child_birthday' 
-                        ? `${event.childName} (${event.memberName}&apos;s child)`
-                        : event.memberName}
-                    </p>
-                    <p className="text-sm font-medium text-black/70 mt-1">{getEventTypeLabel(event.eventType)}</p>
-                    <div className="flex flex-wrap items-center gap-4 mt-2">
-                      <p className="text-sm text-black/50 bg-white/20 px-3 py-1 rounded-full">
-                        {formatDate(event.eventDate)}
-                      </p>
-                      <p className="text-sm text-black/50 bg-white/20 px-3 py-1 rounded-full">
-                        {event.phone}
-                      </p>
+                  <div className="flex items-start justify-between mb-4">
+                    <Badge className="bg-black/5 text-black/60 border-none px-3 py-1 rounded-lg font-bold text-[10px] uppercase tracking-widest">
+                       {getEventTypeLabel(event.eventType)}
+                    </Badge>
+                    <span className="text-[10px] font-black text-black/20 uppercase">{formatDate(event.eventDate)}</span>
+                  </div>
+                  
+                  <p className="text-lg font-black text-black group-hover:text-primary transition-colors truncate mb-1">
+                    {event.eventType === 'child_birthday' 
+                      ? event.childName
+                      : event.memberName}
+                  </p>
+                  
+                  {event.eventType === 'child_birthday' && (
+                    <p className="text-[10px] font-bold text-black/30 mb-4 truncate italic">Child of {event.memberName}</p>
+                  )}
+                  
+                  <div className="mt-auto pt-4 flex items-center justify-between border-t border-black/[0.03]">
+                    <div className="flex items-baseline gap-1">
+                      <span className={cn(
+                        "text-xl font-black tracking-tighter",
+                        event.daysUntil <= 3 ? "text-orange-500" : "text-black/40"
+                      )}>{event.daysUntil}</span>
+                      <span className="text-[10px] font-bold text-black/30 uppercase">Days Left</span>
+                    </div>
+                    <div className="flex gap-2">
+                       <a href={`tel:${event.phone}`} className="p-2 rounded-xl bg-black/[0.03] text-black/40 hover:bg-primary hover:text-white transition-all">
+                          <Bell className="w-3.5 h-3.5" />
+                       </a>
                     </div>
                   </div>
-                  <Badge 
-                    variant={getEventBadgeVariant(event.daysUntil)} 
-                    className={`px-4 py-1.5 text-sm font-semibold whitespace-nowrap w-fit ${
-                      event.daysUntil === 1 ? 'bg-amber-500 hover:bg-amber-600 text-white border-none shadow-lg shadow-amber-500/20' : 'bg-black/10 text-black/80 hover:bg-black/20 border-none'
-                    }`}
-                  >
-                    {event.daysUntil === 1 ? 'Tomorrow' : `In ${event.daysUntil} days`}
-                  </Badge>
                 </motion.div>
               ))}
             </div>

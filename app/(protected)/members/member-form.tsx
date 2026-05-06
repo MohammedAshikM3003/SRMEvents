@@ -13,6 +13,7 @@ import { Member } from '@/lib/types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { useTranslation } from '@/components/language-provider'
 
 const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
 
@@ -39,6 +40,7 @@ interface MemberFormProps {
   initialData?: Member | null
   userId: string
   onSuccess?: () => void
+  mode?: 'add' | 'edit'
 }
 
 const defaultFormData: MemberFormData = {
@@ -60,7 +62,8 @@ const defaultFormData: MemberFormData = {
   has_insurance: false,
 }
 
-export function MemberForm({ initialData, userId, onSuccess }: MemberFormProps) {
+export function MemberForm({ initialData, userId, onSuccess, mode = 'add' }: MemberFormProps) {
+  const { t } = useTranslation()
   const [formData, setFormData] = useState<MemberFormData>(initialData ? {
     name: initialData.name,
     date_of_birth: initialData.date_of_birth,
@@ -141,266 +144,285 @@ export function MemberForm({ initialData, userId, onSuccess }: MemberFormProps) 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      {/* Basic Details */}
-      <div className="space-y-4 p-6 rounded-2xl bg-white border border-black/5 shadow-sm">
-        <h3 className="text-lg font-semibold text-black/90">Basic Details</h3>
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name" className="text-black/70">Name *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-              className="bg-black/5 border-black/10 focus-visible:ring-primary text-black h-12 rounded-xl"
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="flex flex-col gap-8">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" asChild className="rounded-full">
+          <Link href="/members">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+        </Button>
+        <div>
+          <h1 className="text-4xl font-extrabold text-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-black to-black/60">
+            {mode === 'add' ? t('add_member') : t('edit')}
+          </h1>
+          <p className="text-black/60 mt-2 text-lg">
+            {mode === 'add' ? t('manage_members') : t('update_member')}
+          </p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        {/* Basic Details */}
+        <div className="space-y-4 p-6 rounded-2xl bg-white border border-black/5 shadow-sm">
+          <h3 className="text-lg font-semibold text-black/90">{t('basic_details')}</h3>
+          <div className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="dob" className="text-black/70">Date of Birth *</Label>
+              <Label htmlFor="name" className="text-black/70">{t('name')} *</Label>
               <Input
-                id="dob"
-                type="date"
-                value={formData.date_of_birth}
-                onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
                 className="bg-black/5 border-black/10 focus-visible:ring-primary text-black h-12 rounded-xl"
               />
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="dob" className="text-black/70">{t('date_of_birth')} *</Label>
+                <Input
+                  id="dob"
+                  type="date"
+                  value={formData.date_of_birth}
+                  onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                  required
+                  className="bg-black/5 border-black/10 focus-visible:ring-primary text-black h-12 rounded-xl"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="blood_group" className="text-black/70">{t('blood_group')}</Label>
+                <Select
+                  value={formData.blood_group}
+                  onValueChange={(value) => setFormData({ ...formData, blood_group: value })}
+                >
+                  <SelectTrigger className="bg-black/5 border-black/10 text-black h-12 rounded-xl">
+                    <SelectValue placeholder={t('select_blood_group')} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border-black/10 text-black">
+                    {bloodGroups.map((bg) => (
+                      <SelectItem key={bg} value={bg}>{bg}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div className="grid gap-2">
-              <Label htmlFor="blood_group" className="text-black/70">Blood Group</Label>
+              <Label htmlFor="phone" className="text-black/70">{t('phone')} *</Label>
+              <div className="relative flex items-center">
+                <div className="absolute left-3 flex items-center pointer-events-none">
+                  <span className="text-black/40 font-medium border-r border-black/10 pr-3 mr-1">+91</span>
+                </div>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => {
+                    let value = e.target.value.replace(/\D/g, '') // Remove non-digits
+                    if (value.startsWith('91') && value.length > 10) {
+                      value = value.substring(2)
+                    }
+                    if (value.length > 10) {
+                      value = value.substring(0, 10)
+                    }
+                    setFormData({ ...formData, phone: value })
+                  }}
+                  onPaste={(e) => {
+                    e.preventDefault()
+                    let pastedData = e.clipboardData.getData('text').replace(/\D/g, '')
+                    if (pastedData.startsWith('91') && pastedData.length > 10) {
+                      pastedData = pastedData.substring(2)
+                    }
+                    if (pastedData.length > 10) {
+                      pastedData = pastedData.substring(0, 10)
+                    }
+                    setFormData({ ...formData, phone: pastedData })
+                  }}
+                  required
+                  placeholder="10 digit mobile number"
+                  className="bg-black/5 border-black/10 focus-visible:ring-primary text-black h-12 rounded-xl pl-16 w-full"
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="branch" className="text-black/70">{t('branch_label')} *</Label>
               <Select
-                value={formData.blood_group}
-                onValueChange={(value) => setFormData({ ...formData, blood_group: value })}
+                value={formData.branch}
+                onValueChange={(value) => setFormData({ ...formData, branch: value })}
+                required
               >
                 <SelectTrigger className="bg-black/5 border-black/10 text-black h-12 rounded-xl">
-                  <SelectValue placeholder="Select blood group" />
+                  <SelectValue placeholder={t('select_branch')} />
                 </SelectTrigger>
                 <SelectContent className="bg-white border-black/10 text-black">
-                  {bloodGroups.map((bg) => (
-                    <SelectItem key={bg} value={bg}>{bg}</SelectItem>
-                  ))}
+                  <SelectItem value="Tiruvallur (TRL)">Tiruvallur (TRL)</SelectItem>
+                  <SelectItem value="oddanchatram (ODC)">Oddanchatram (ODC)</SelectItem>
+                  <SelectItem value="Dindigul (DGL)">Dindigul (DGL)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="address" className="text-black/70">{t('address')}</Label>
+              <Textarea
+                id="address"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                rows={3}
+                className="bg-black/5 border-black/10 focus-visible:ring-primary text-black rounded-xl"
+              />
+            </div>
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="phone" className="text-black/70">Phone *</Label>
-            <div className="relative flex items-center">
-              <div className="absolute left-3 flex items-center pointer-events-none">
-                <span className="text-black/40 font-medium border-r border-black/10 pr-3 mr-1">+91</span>
+        </div>
+
+        {/* Marital Details */}
+        <div className="space-y-4 p-6 rounded-2xl bg-white border border-black/5 shadow-sm">
+          <h3 className="text-lg font-semibold text-black/90">{t('marital_details')}</h3>
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label className="text-black/70">{t('marital_status')}</Label>
+              <Select
+                value={formData.marital_status}
+                onValueChange={(value) => setFormData({ ...formData, marital_status: value })}
+              >
+                <SelectTrigger className="bg-black/5 border-black/10 text-black h-12 rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-black/10 text-black">
+                  <SelectItem value="single">{t('single')}</SelectItem>
+                  <SelectItem value="married">{t('married')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {formData.marital_status === 'married' && (
+              <div className="grid gap-2 animate-in slide-in-from-top-2">
+                <Label htmlFor="marriage_date" className="text-black/70">{t('marriage_date')}</Label>
+                <Input
+                  id="marriage_date"
+                  type="date"
+                  value={formData.marriage_date}
+                  onChange={(e) => setFormData({ ...formData, marriage_date: e.target.value })}
+                  className="bg-black/5 border-black/10 focus-visible:ring-primary text-black h-12 rounded-xl"
+                />
               </div>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => {
-                  let value = e.target.value.replace(/\D/g, '') // Remove non-digits
-                  if (value.startsWith('91') && value.length > 10) {
-                    value = value.substring(2)
-                  }
-                  if (value.length > 10) {
-                    value = value.substring(0, 10)
-                  }
-                  setFormData({ ...formData, phone: value })
-                }}
-                onPaste={(e) => {
-                  e.preventDefault()
-                  let pastedData = e.clipboardData.getData('text').replace(/\D/g, '')
-                  if (pastedData.startsWith('91') && pastedData.length > 10) {
-                    pastedData = pastedData.substring(2)
-                  }
-                  if (pastedData.length > 10) {
-                    pastedData = pastedData.substring(0, 10)
-                  }
-                  setFormData({ ...formData, phone: pastedData })
-                }}
-                required
-                placeholder="10 digit mobile number"
-                className="bg-black/5 border-black/10 focus-visible:ring-primary text-black h-12 rounded-xl pl-16 w-full"
-              />
+            )}
+          </div>
+        </div>
+
+        {/* Children Details */}
+        <div className="space-y-4 p-6 rounded-2xl bg-white border border-black/5 shadow-sm">
+          <h3 className="text-lg font-semibold text-black/90">{t('children_details')}</h3>
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label className="text-black/70">{t('number_of_children')}</Label>
+              <Select
+                value={formData.number_of_children.toString()}
+                onValueChange={(value) => setFormData({ ...formData, number_of_children: parseInt(value) })}
+              >
+                <SelectTrigger className="bg-black/5 border-black/10 text-black h-12 rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-black/10 text-black">
+                  <SelectItem value="0">0</SelectItem>
+                  <SelectItem value="1">1</SelectItem>
+                  <SelectItem value="2">2</SelectItem>
+                  <SelectItem value="3">3</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="branch" className="text-black/70">Branch *</Label>
-            <Select
-              value={formData.branch}
-              onValueChange={(value) => setFormData({ ...formData, branch: value })}
-              required
-            >
-              <SelectTrigger className="bg-black/5 border-black/10 text-black h-12 rounded-xl">
-                <SelectValue placeholder="Select branch" />
-              </SelectTrigger>
-              <SelectContent className="bg-white border-black/10 text-black">
-                <SelectItem value="Tiruvallur (TRL)">Tiruvallur (TRL)</SelectItem>
-                <SelectItem value="oddanchatram (ODC)">Oddanchatram (ODC)</SelectItem>
-                <SelectItem value="Dindigul (DGL)">Dindigul (DGL)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="address" className="text-black/70">Address</Label>
-            <Textarea
-              id="address"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              rows={3}
-              className="bg-black/5 border-black/10 focus-visible:ring-primary text-black rounded-xl"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Marital Details */}
-      <div className="space-y-4 p-6 rounded-2xl bg-white border border-black/5 shadow-sm">
-        <h3 className="text-lg font-semibold text-black/90">Marital Details</h3>
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label className="text-black/70">Marital Status</Label>
-            <Select
-              value={formData.marital_status}
-              onValueChange={(value) => setFormData({ ...formData, marital_status: value })}
-            >
-              <SelectTrigger className="bg-black/5 border-black/10 text-black h-12 rounded-xl">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-white border-black/10 text-black">
-                <SelectItem value="single">Single</SelectItem>
-                <SelectItem value="married">Married</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {formData.marital_status === 'married' && (
-            <div className="grid gap-2 animate-in slide-in-from-top-2">
-              <Label htmlFor="marriage_date" className="text-black/70">Marriage Date</Label>
-              <Input
-                id="marriage_date"
-                type="date"
-                value={formData.marriage_date}
-                onChange={(e) => setFormData({ ...formData, marriage_date: e.target.value })}
-                className="bg-black/5 border-black/10 focus-visible:ring-primary text-black h-12 rounded-xl"
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Children Details */}
-      <div className="space-y-4 p-6 rounded-2xl bg-white border border-black/5 shadow-sm">
-        <h3 className="text-lg font-semibold text-black/90">Children Details</h3>
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label className="text-black/70">Number of Children</Label>
-            <Select
-              value={formData.number_of_children.toString()}
-              onValueChange={(value) => setFormData({ ...formData, number_of_children: parseInt(value) })}
-            >
-              <SelectTrigger className="bg-black/5 border-black/10 text-black h-12 rounded-xl">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-white border-black/10 text-black">
-                <SelectItem value="0">0</SelectItem>
-                <SelectItem value="1">1</SelectItem>
-                <SelectItem value="2">2</SelectItem>
-                <SelectItem value="3">3</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <AnimatePresence>
-            {formData.number_of_children >= 1 && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-black/5 rounded-xl border border-black/5">
-                <div className="grid gap-2">
-                  <Label className="text-black/70">Child 1 Name</Label>
-                  <Input
-                    value={formData.child1_name}
-                    onChange={(e) => setFormData({ ...formData, child1_name: e.target.value })}
-                    className="bg-white border-black/10 text-black h-11 rounded-lg"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-black/70">Child 1 DOB</Label>
-                  <Input
-                    type="date"
-                    value={formData.child1_dob}
-                    onChange={(e) => setFormData({ ...formData, child1_dob: e.target.value })}
-                    className="bg-white border-black/10 text-black h-11 rounded-lg"
-                  />
-                </div>
-              </motion.div>
-            )}
             
-            {formData.number_of_children >= 2 && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-black/5 rounded-xl border border-black/5">
-                <div className="grid gap-2">
-                  <Label className="text-black/70">Child 2 Name</Label>
-                  <Input
-                    value={formData.child2_name}
-                    onChange={(e) => setFormData({ ...formData, child2_name: e.target.value })}
-                    className="bg-white border-black/10 text-black h-11 rounded-lg"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-black/70">Child 2 DOB</Label>
-                  <Input
-                    type="date"
-                    value={formData.child2_dob}
-                    onChange={(e) => setFormData({ ...formData, child2_dob: e.target.value })}
-                    className="bg-white border-black/10 text-black h-11 rounded-lg"
-                  />
-                </div>
-              </motion.div>
-            )}
-            
-            {formData.number_of_children >= 3 && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-black/5 rounded-xl border border-black/5">
-                <div className="grid gap-2">
-                  <Label className="text-black/70">Child 3 Name</Label>
-                  <Input
-                    value={formData.child3_name}
-                    onChange={(e) => setFormData({ ...formData, child3_name: e.target.value })}
-                    className="bg-white border-black/10 text-black h-11 rounded-lg"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-black/70">Child 3 DOB</Label>
-                  <Input
-                    type="date"
-                    value={formData.child3_dob}
-                    onChange={(e) => setFormData({ ...formData, child3_dob: e.target.value })}
-                    className="bg-white border-black/10 text-black h-11 rounded-lg"
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+            <AnimatePresence>
+              {formData.number_of_children >= 1 && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-black/5 rounded-xl border border-black/5">
+                  <div className="grid gap-2">
+                    <Label className="text-black/70">{t('child_name', { n: 1 })}</Label>
+                    <Input
+                      value={formData.child1_name}
+                      onChange={(e) => setFormData({ ...formData, child1_name: e.target.value })}
+                      className="bg-white border-black/10 text-black h-11 rounded-lg"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-black/70">{t('child_dob', { n: 1 })}</Label>
+                    <Input
+                      type="date"
+                      value={formData.child1_dob}
+                      onChange={(e) => setFormData({ ...formData, child1_dob: e.target.value })}
+                      className="bg-white border-black/10 text-black h-11 rounded-lg"
+                    />
+                  </div>
+                </motion.div>
+              )}
+              
+              {formData.number_of_children >= 2 && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-black/5 rounded-xl border border-black/5">
+                  <div className="grid gap-2">
+                    <Label className="text-black/70">{t('child_name', { n: 2 })}</Label>
+                    <Input
+                      value={formData.child2_name}
+                      onChange={(e) => setFormData({ ...formData, child2_name: e.target.value })}
+                      className="bg-white border-black/10 text-black h-11 rounded-lg"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-black/70">{t('child_dob', { n: 2 })}</Label>
+                    <Input
+                      type="date"
+                      value={formData.child2_dob}
+                      onChange={(e) => setFormData({ ...formData, child2_dob: e.target.value })}
+                      className="bg-white border-black/10 text-black h-11 rounded-lg"
+                    />
+                  </div>
+                </motion.div>
+              )}
+              
+              {formData.number_of_children >= 3 && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-black/5 rounded-xl border border-black/5">
+                  <div className="grid gap-2">
+                    <Label className="text-black/70">{t('child_name', { n: 3 })}</Label>
+                    <Input
+                      value={formData.child3_name}
+                      onChange={(e) => setFormData({ ...formData, child3_name: e.target.value })}
+                      className="bg-white border-black/10 text-black h-11 rounded-lg"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-black/70">{t('child_dob', { n: 3 })}</Label>
+                    <Input
+                      type="date"
+                      value={formData.child3_dob}
+                      onChange={(e) => setFormData({ ...formData, child3_dob: e.target.value })}
+                      className="bg-white border-black/10 text-black h-11 rounded-lg"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
-      </div>
 
-      {/* Insurance */}
-      <div className="flex items-center gap-3 p-6 rounded-2xl bg-white border border-black/5 shadow-sm">
-        <Switch
-          id="insurance"
-          checked={formData.has_insurance}
-          onCheckedChange={(checked) => setFormData({ ...formData, has_insurance: checked })}
-        />
-        <Label htmlFor="insurance" className="text-black/90 font-medium">Has Insurance Coverage?</Label>
-      </div>
+        {/* Insurance */}
+        <div className="flex items-center gap-3 p-6 rounded-2xl bg-white border border-black/5 shadow-sm">
+          <Switch
+            id="insurance"
+            checked={formData.has_insurance}
+            onCheckedChange={(checked) => setFormData({ ...formData, has_insurance: checked })}
+          />
+          <Label htmlFor="insurance" className="text-black/90 font-medium">{t('insurance_coverage')}</Label>
+        </div>
 
-      <div className="flex gap-4">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={() => router.back()}
-          className="flex-1 h-12 text-lg rounded-xl border-black/10"
-        >
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isLoading} className="flex-[2] h-12 text-lg rounded-xl">
-          {isLoading ? 'Saving...' : initialData ? 'Update Member' : 'Add Member'}
-        </Button>
-      </div>
-    </form>
+        <div className="flex gap-4">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => router.back()}
+            className="flex-1 h-12 text-lg rounded-xl border-black/10"
+          >
+            {t('cancel')}
+          </Button>
+          <Button type="submit" disabled={isLoading} className="flex-[2] h-12 text-lg rounded-xl">
+            {isLoading ? t('saving') : initialData ? t('update_member') : t('add_member')}
+          </Button>
+        </div>
+      </form>
+    </div>
   )
 }

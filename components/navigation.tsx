@@ -5,22 +5,25 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { LayoutDashboard, Users, Calendar, Settings, LogOut, Hexagon } from 'lucide-react'
-
-const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/members', label: 'Members', icon: Users },
-  { href: '/events', label: 'Events', icon: Calendar },
-  { href: '/settings', label: 'Settings', icon: Settings },
-]
+import { useTranslation } from '@/components/language-provider'
 
 export function Navigation() {
+  const { t, language } = useTranslation()
   const pathname = usePathname()
   const router = useRouter()
 
+  const navItems = [
+    { href: '/dashboard', label: t('dashboard'), icon: LayoutDashboard },
+    { href: '/members', label: t('members'), icon: Users },
+    { href: '/events', label: t('events'), icon: Calendar },
+    { href: '/settings', label: t('settings'), icon: Settings },
+  ]
+
   const handleLogout = async () => {
     localStorage.removeItem('isLoggedIn')
+    document.cookie = "isLoggedIn=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax"
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/auth/login')
@@ -29,17 +32,22 @@ export function Navigation() {
   return (
     <>
       {/* Mobile Top Header */}
-      <header className="md:hidden glass-panel border-b border-black/10 sticky top-0 z-50 bg-white/40 backdrop-blur-xl">
-        <div className="px-4 py-4 flex items-center justify-between">
-          <Link href="/dashboard" className="text-xl font-extrabold text-black tracking-tight flex items-center gap-2">
-            <Hexagon className="w-6 h-6 text-primary fill-primary/20" />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-black to-black/70">SRM LifeStyle</span>
+      <header className="md:hidden glass-panel border-b border-black/10 relative z-50 bg-white/40 backdrop-blur-xl">
+        <div className="px-4 py-3 flex items-center justify-between">
+          <Link href="/dashboard" className="flex items-center gap-2 group">
+            <Hexagon className="w-5 h-5 text-primary fill-primary/20" />
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-lg font-black text-black tracking-tighter">SRM</span>
+              <span className="text-base font-bold text-black/70 tracking-tight">
+                {language === 'en' ? 'LifeStyle' : 'லைஃப்ஸ்டைல்'}
+              </span>
+            </div>
           </Link>
-          <Button variant="ghost" size="icon" onClick={handleLogout} className="text-black/70 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors">
-            <LogOut className="w-5 h-5" />
+          <Button variant="ghost" size="icon" onClick={handleLogout} className="h-9 w-9 text-black/70 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors">
+            <LogOut className="w-4 h-4" />
           </Button>
         </div>
-        <nav className="flex items-center gap-2 px-4 pb-4 overflow-x-auto no-scrollbar">
+        <nav className="flex items-center gap-1 px-3 pb-3 overflow-x-auto no-scrollbar">
           {navItems.map((item) => {
             const isActive = item.href === '/dashboard' 
               ? pathname === '/dashboard' 
@@ -49,7 +57,7 @@ export function Navigation() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="relative px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap"
+                className="relative px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap"
               >
                 {isActive && (
                   <motion.div
@@ -58,8 +66,8 @@ export function Navigation() {
                     transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                   />
                 )}
-                <span className={cn("relative z-10 flex items-center gap-2", isActive ? "text-black font-bold" : "text-black/60 hover:text-black/90")}>
-                  <item.icon className="w-4 h-4" />
+                <span className={cn("relative z-10 flex items-center gap-1.5", isActive ? "text-black font-bold" : "text-black/60 hover:text-black/90")}>
+                  <item.icon className="w-3.5 h-3.5" />
                   {item.label}
                 </span>
               </Link>
@@ -79,12 +87,28 @@ export function Navigation() {
           {/* Subtle glow effect behind sidebar */}
           <div className="absolute top-0 left-0 w-full h-64 bg-primary/5 rounded-full blur-[80px] pointer-events-none" />
 
-          <div className="mb-12 px-2 pt-2 relative z-10">
-            <Link href="/dashboard" className="text-2xl font-extrabold text-black tracking-tight flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center shadow-lg group-hover:shadow-primary/30 transition-shadow">
-                <Hexagon className="w-6 h-6 text-white" />
+          {/* Centered Branding Section */}
+          <div className="mb-12 px-2 pt-4 relative z-10 flex flex-col items-center text-center">
+            <Link href="/dashboard" className="flex flex-col items-center group">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center shadow-lg group-hover:shadow-primary/30 transition-all duration-500 group-hover:scale-110 mb-4">
+                <Hexagon className="w-7 h-7 text-white" />
               </div>
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-black to-black/70">SRM LifeStyle</span>
+              
+              <div className="flex flex-col items-center">
+                <span className="text-2xl font-black text-black tracking-tighter leading-none mb-1">SRM</span>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={language}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.2 }}
+                    className="text-xl font-bold text-black/70 tracking-tight leading-none"
+                  >
+                    {language === 'en' ? 'LifeStyle' : 'லைஃப்ஸ்டைல்'}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
             </Link>
           </div>
           
@@ -125,7 +149,7 @@ export function Navigation() {
               className="w-full justify-start text-black/60 hover:text-red-600 hover:bg-red-50 hover:border-red-100 border border-transparent rounded-2xl px-4 py-6 transition-all duration-300 group"
             >
               <LogOut className="w-5 h-5 mr-3 group-hover:-translate-x-1 transition-transform" />
-              <span className="text-base font-medium">Logout</span>
+              <span className="text-base font-medium">{t('logout')}</span>
             </Button>
           </div>
         </motion.div>

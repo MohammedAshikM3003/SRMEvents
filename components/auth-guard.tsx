@@ -8,7 +8,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const [isAuthorized, setIsAuthorized] = useState(false)
 
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn')
+    const isLoggedIn = document.cookie.split('; ').find(row => row.startsWith('isLoggedIn='))?.split('=')[1]
     if (isLoggedIn !== 'true') {
       router.push('/auth/login')
     } else {
