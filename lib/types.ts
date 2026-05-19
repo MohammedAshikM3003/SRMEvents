@@ -4,7 +4,6 @@ export interface Member {
   name: string
   date_of_birth: string
   blood_group: string | null
-  branch: 'Tiruvallur (TRL)' | 'oddanchatram (ODC)' | 'Dindigul (DGL)' | null
   phone: string
   address: string | null
   marital_status: string
@@ -21,13 +20,6 @@ export interface Member {
   updated_at: string
 }
 
-export interface ReminderAcknowledgment {
-  id: string
-  member_id: string
-  event_type: 'Birthday' | 'Wedding Anniversary' | 'Child Birthday'
-  event_date: string // The actual date of the event (e.g., 2026-05-06)
-  acknowledged_at: string
-}
 
 export interface NotificationContact {
   id: string
@@ -42,8 +34,6 @@ export interface Settings {
   id: string
   user_id: string
   reminder_days_before: number
-  reminder_time: string // Format: "HH:mm" (e.g., "09:00")
-  language?: 'en' | 'ta'
   created_at: string
   updated_at: string
 }
