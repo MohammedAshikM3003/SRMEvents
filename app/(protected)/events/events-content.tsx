@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Member, UpcomingEvent } from '@/lib/types'
+import { Member, UpcomingEvent, ReminderAcknowledgment } from '@/lib/types'
 import { 
   Table, 
   TableBody, 
@@ -17,6 +17,8 @@ import { motion, Variants } from 'framer-motion'
 import { Search, Calendar, Cake, Heart, Baby, Phone, Bell, Edit2, Trash2, MoreVertical, CalendarDays, Sparkles } from 'lucide-react'
 import { format, differenceInDays, addYears, startOfDay, setYear } from 'date-fns'
 import { cn, formatDate } from '@/lib/utils'
+import { undoAcknowledgment } from '@/app/actions/events'
+import { useRouter } from 'next/navigation'
 import { useTranslation } from '@/components/language-provider'
 import Link from 'next/link'
 import {
@@ -228,7 +230,11 @@ export function EventsContent({ members }: EventsContentProps) {
                 </TableRow>
               ) : (
                 filteredEvents.map((event, index) => (
-                  <TableRow key={event.id} className="hover:bg-black/[0.01] border-black/5 transition-colors">
+                  <TableRow key={event.id} className={cn(
+                    "hover:bg-black/[0.01] border-black/5 transition-colors",
+                    event.status === 'done' && "bg-green-50/50 hover:bg-green-50",
+                    event.status === 'expired' && "bg-red-50/50 hover:bg-red-50"
+                  )}>
                     <TableCell className="py-5 px-6 font-medium text-black/40 text-center">
                       {index + 1}
                     </TableCell>

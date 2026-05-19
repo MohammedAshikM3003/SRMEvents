@@ -13,5 +13,12 @@ export default async function EventsPage() {
     .select('*')
     .eq('user_id', userId)
 
-  return <EventsContent members={members || []} />
+  const memberIds = members?.map(m => m.id) || []
+  
+  const { data: acknowledgments } = await supabase
+    .from('reminder_acknowledgments')
+    .select('*')
+    .in('member_id', memberIds)
+
+  return <EventsContent members={members || []} acknowledgments={acknowledgments || []} />
 }

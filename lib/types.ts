@@ -58,4 +58,13 @@ export interface UpcomingEvent {
   daysUntil: number
   childName?: string
   phone: string
+  status: 'upcoming' | 'done' | 'expired'
+}
+
+export interface ReminderAcknowledgment {
+  id: string
+  member_id: string
+  event_type: string
+  event_date: string
+  created_at: string
 }
